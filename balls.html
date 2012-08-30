@@ -1,0 +1,102 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+    <script type="text/javascript" src="js/zx.physic.js"></script>
+    <script type="text/javascript" src="js/zx.game.js"></script>
+    <script type="text/javascript">
+        function Ball(r)
+        {
+            zx.Element.call(this);
+            this.r = r;
+            this.width = this.height = r * 2;
+        }
+        Ball.prototype = new zx.Element();
+        function Block()
+        {
+            zx.Element.call(this);
+        }
+        Block.prototype = new zx.Element();
+        Block.prototype.draw = function(ctx)
+        {
+            zx.Element.prototype.draw.call(this, ctx);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.p.x, this.p.y, this.width, this.height);
+        };
+
+
+
+        var balls = [];
+        function start()
+        {
+            var canvas = document.getElementById('canvas');
+            var ctx = null;
+            if (canvas.getContext)
+            {
+                ctx = canvas.getContext('2d');
+            }
+            var game = new zx.Game(ctx, {fps:60});
+            game.life = function(ctx, time)
+            {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = zx.color(255, 255, 255);
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                for (var i = 0; i < balls.length; i++)
+                {
+                    var ball = balls[i];
+                    if (ball == undefined || (ball.p.y - ball.r) > ctx.canvas.height)
+                    {
+                        balls[i] = undefined;
+                        continue;
+                    }
+                    ball.update(ctx, time, 1 / 60);
+                    ball.draw(ctx);
+                }
+            };
+            game.start();
+            setInterval(function()
+            {
+                var ball = new Ball(zx.random(5, 10));
+                ball.p = {x:zx.random(12, 500),y:zx.random(12, 300)};
+                ball.color = zx.color(zx.random(0, 255), zx.random(0, 255), zx.random(0, 255), zx.random(10, 100) * 0.01);
+                ball.v = {x:0,y:0};
+                for (var i = 0; i < balls.length; i++)
+                {
+                    if (balls[i] == undefined)
+                    {
+                        balls[i] = ball;
+                        return;
+                    }
+                }
+                balls.push(ball);
+            }, 10);
+        }
+        function mousePower()
+        {
+            var p = {x:event.clientX,y:event.clientY};
+            for (var i = 0; i < balls.length; i++)
+            {
+                var ball=balls[i];
+                if(ball ==undefined)
+                    continue;
+                //distance
+                var d = Math.sqrt(Math.pow(ball.p.x-p.x,2)+Math.pow(ball.p.y-p.y,2));
+
+                if(d<50)
+                    ball.a={x:0,y:-1000};
+                else
+                    ball.a=zx.physic.G;
+            }
+        }
+    </script>
+</head>
+
+<body onload="start()" onmousemove="mousePower()">
+<canvas id="canvas" width="500" height="500"></canvas>
+</body>
+</html>
