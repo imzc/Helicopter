@@ -4,18 +4,28 @@
  * Date: 11-6-29
  * Time: 下午2:07
  */
-var zx=zx||{};
+var zx = zx || {};
+zx.color=function(r,g,b,a){
+    r = r ==undefined?0:parseInt(r)%256;
+    g = g ==undefined?0:parseInt(g)%256;
+    b = b ==undefined?0:parseInt(b)%256;
 
-zx.GameState={
+    if(a == undefined)
+        return "rgb("+r+","+g+","+b+")";
+    a = parseFloat(a);
+    return "rgba("+r+","+g+","+b+","+a+")";
+};
+zx.GameState = {
     start:0,
     running:1,
     pause:2,
     over:4
 };
-zx.random=function(min,max){
-    if(max<min)
-        max=min+1;
-    var r = Math.random()*(max-min)+min;
+zx.random = function(min, max)
+{
+    if (max < min)
+        max = min + 1;
+    var r = Math.random() * (max - min) + min;
     return parseInt(r.toString());
 };
 
@@ -100,4 +110,32 @@ zx.Game = function (context, options) {
         if (GAME.onOver)
             GAME.onOver(GAME.context);
     }
+};
+//Game Element Base
+zx.Element = function()
+{
+    var SELF = this;
+    this.p = {
+        x:0,
+        y:0
+    };
+    this.width=1;
+    this.height=1;
+    this.color = "rgb(255,255,255)";
+    this.v = {
+        x:0,
+        y:0
+    };
+    this.a=zx.physic.G;
+};
+zx.Element.prototype.draw = function(ctx)
+{
+    ctx.beginPath();
+    ctx.fillStyle = this.color;
+    ctx.arc(this.p.x-this.width/2, this.p.y-this.width/2, this.width/2, 0, 2 * Math.PI, true);
+    ctx.fill();
+};
+zx.Element.prototype.update=function(ctx,time,timespan){
+    this.v = zx.physic.getVbyA_t(this.a,timespan,this.v);
+    this.p=zx.physic.getPbyA_V_t(this.a,this.v,timespan,this.p);
 };
