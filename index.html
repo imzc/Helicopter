@@ -1,0 +1,229 @@
+<html>
+  <head>
+    <title>Canvas tutorial</title>
+      <script type="text/javascript" src="js/zx.game.js"></script>
+    <script type="text/javascript">
+
+      function draw(){
+      }
+    </script>
+    <style type="text/css">
+      canvas { border: 1px solid black; }
+    </style>
+  </head>
+  <body onload="intGame();">
+    <canvas id="tutorial" width="300" height="300"></canvas>
+    <div id="text"></div>
+      <input type="button" name="UP" value="UP" />
+    <img id="f" src="images/h.png" />
+    <script type="text/javascript">
+        var eImage = document.getElementById("f");
+        var canvas = document.getElementById('tutorial');
+        var ctx=null;
+        if (canvas.getContext){
+          ctx = canvas.getContext('2d');
+        }
+        var BallContext = function (image) {
+            var BALL = this;
+            this.p = {
+                x: 0,
+                y: 0
+            };
+            this.width = image.width;
+            this.height = image.height;
+            this.color = "rgb(100,200,100)";
+            this.v = {
+                x: 0,
+                y: 0
+            };
+            this.r = 5;
+            this.draw = function (ctx) {
+                /*ctx.beginPath();
+                ctx.fillStyle=BALL.color;
+                ctx.arc(BALL.p.x,BALL.p.y,BALL.r,0,2*Math.PI,true);
+                ctx.fill();*/
+                ctx.drawImage(image, BALL.p.x, BALL.p.y, image.width, image.height)
+            };
+            this.clear = function (ctx) {
+                ctx.clearRect(BALL.p.x - image.width / 2 - 5, BALL.p.y - image.height / 2 - 5, image.width + 10, image.height + 10);
+            };
+            /*this.getRect=function(){
+            var x1=BALL.p.x-eImage.width/2,
+            y1=BALL.p.y-eImage.height/2;
+            return {
+            x1:x1,
+            y1:y1,
+            x2:x1+ eImage.width,
+            y2:y1+eImage.height
+            };
+            }*/
+        };
+
+        var physic={
+            G:{x:0,y:100},
+            getVbyA_t:function(a,t,v){
+                v=v||{x:0,y:0};
+                a = a||{x:0,y:physic.G};
+                t = t||0;
+                return {
+                    x:v.x+a.x*t,
+                    y:v.y+a.y*t
+                };
+            },
+            getPbyV_t:function(v,t,p){
+                v=v||0;
+                t=t||0;
+                p = p||{x:0,y:0};
+                return {
+                    x:p.x+v*t,
+                    y:p.y+v*t
+                };
+            },
+            getPbyA_t:function(a,t,p){
+                a=a||{x:0,y:physic.G};
+                t=t||0;
+                p = p||{x:0,y:0};
+                return {
+                    x:p.x+a.x*t*t/2,
+                    y:p.y+a.y*t*t/2
+                };
+            },
+            getPbyA_V_t:function(a,v,t,p){
+                a=a||{x:0,y:physic.G};
+                t=t||0;
+                p = p||{x:0,y:0};
+                return {
+                    x:p.x+a.x*t*t/2+v.x*t,
+                    y:p.y+a.y*t*t/2+v.y*t
+                };
+            }
+        };
+
+        var Wall=function(width,height)
+        {
+            var SELF=this;
+            this.width=width;
+            this.height=height;
+            this.p = {
+                x:0,
+                y:0
+            };
+            this.draw=function(ctx)
+            {
+                ctx.fillStyle = "rgb(100,100,100)";
+                ctx.fillRect(SELF.p.x, SELF.p.y, SELF.width, SELF.height);
+            };
+            this.clear=function(ctx){
+                ctx.clearRect(SELF.p.x-5, SELF.p.y-5, SELF.width+10, SELF.height+10);
+            }
+        };
+
+        function intGame() {
+            var game = new zx.Game(ctx, { fps: 60 });
+            var lastTime = null;
+            var theBall = new BallContext(eImage);
+            theBall.p = { x: 50, y: 100 };
+            var TheG = physic.G;
+
+            var walls = [];
+            var step = 50;
+            for (var i = 0; i < 1000; i++) {
+                var totalHeight = ctx.canvas.height;
+                var w = 20, x = w * i + 500, y = 0;
+                var h = zx.random(50, 130);
+                var h2 = zx.random(50, totalHeight - h - step*2);
+                if (i > 0) {
+                    var leftHeight = walls[2 * i - 2].height + step;
+                    var leftHeight2 = walls[2 * i - 1].height + step;
+
+                    var safe = totalHeight - leftHeight2 - step;
+                    h = zx.random(50, leftHeight > safe ? safe : leftHeight);
+
+                    var safe2 = totalHeight - leftHeight - step;
+                    h2 = zx.random(50, leftHeight2 > safe2 ? safe2 : leftHeight2);
+                }
+                var newWallTop = new Wall(w, h);
+                newWallTop.p = {
+                    x: x,
+                    y: y
+                };
+                var newWallBottom = new Wall(w, h2);
+                newWallBottom.p = {
+                    x: x,
+                    y: ctx.canvas.height - h2
+                };
+                walls.push(newWallTop);
+                walls.push(newWallBottom);
+            }
+            game.onOver = function (ctx) {
+                ctx.fillStyle = "rgb(0,0,0)";
+                ctx.font = "30pt Arial";
+                ctx.fillText("Game Over", 50, 149);
+                ctx.fillStyle = "rgb(255,0,0)";
+                ctx.font = "30pt Arial";
+                ctx.fillText("Game Over", 50, 150);
+            }
+            game.life = function (ctx, time) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                var f_time_span = time - lastTime;
+                lastTime = time;
+                theBall.p = physic.getPbyA_V_t(TheG, theBall.v, f_time_span / 1000, theBall.p);
+                theBall.v = physic.getVbyA_t(TheG, f_time_span / 1000, theBall.v);
+
+                if (theBall.p.y > 300)
+                    theBall.p.y = 300;
+
+                //draw walls
+                for (var i = 0; i < walls.length; i++) {
+                    walls[i].p.x += -f_time_span / 1000 * game.options.fps;
+                    if (walls[i].p.x + walls[i].width > 0 && walls[i].p.x < ctx.canvas.width) {
+                        walls[i].draw(ctx);
+                        //Edge check
+                        if (zx.checkEdge(walls[i], theBall))
+                            game.over();
+                    }
+
+                }
+
+                //draw ball
+                theBall.draw(ctx);
+
+
+
+                ctx.fillStyle = "rgb(0,0,0)";
+                ctx.font = "20pt Arial";
+                ctx.fillText("Total:" + parseInt(time / 1000), 10, 39);
+                ctx.fillStyle = "rgb(255,255,0)";
+                ctx.font = "20pt Arial";
+                ctx.fillText("Total:" + parseInt(time / 1000), 10, 40);
+            };
+            game.start();
+            function up() {
+                TheG = { x: 0, y: -50 };
+                if (theBall.v.y > 0) {
+                    theBall.v = { x: 0, y: -80 };
+                }
+            }
+            function down() {
+                TheG = physic.G;
+                if (theBall.v.y < 0)
+                    theBall.v = { x: 0, y: 50 }
+            }
+            document.body.onkeydown = function () {
+                if (event.keyCode != 38)
+                    return;
+                up();
+            };
+            document.body.onkeyup = function () {
+                down()
+            };
+
+
+            eImage.style.display = "none";
+        }
+
+        
+    </script>
+  </body>
+
+</html>
